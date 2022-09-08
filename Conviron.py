@@ -33,8 +33,6 @@ GPIO.output(25,False)
 GPIO.output(16,True)                       #Start blower fan when machine starts
 GPIO.output(26,False)
 
-time.sleep(10)
-
 def Lighting_Timer():
     while True:
         try:      
@@ -92,12 +90,12 @@ def Temp_Control(): #Tempreature sensing and control
     while True:
         try:
             now = datetime.datetime.now()
+            temp = sensor.temperature         
+            humidity = sensor.humidity
             isDay = now.replace(hour = 6, minute = 0, second  = 0, microsecond = 0)    #Day start
             isNight = now.replace(hour = 18, minute = 0, second  = 0, microsecond = 0)  #Night starts
             dayTemps = now > isDay and now < isNight
-            nighTemps = now > isNight or now < isDay        
-            temp = sensor.temperature         
-            humidity = sensor.humidity                     
+            nighTemps = now > isNight or now < isDay                            
             #Day Tempreatue scenario
             if(dayTemps == True):
                 print('Day Tempreatures scenario')
@@ -155,7 +153,7 @@ def data_log():
     while True:
         try:
             now = datetime.datetime.now()
-            temp = sensor.temperature       
+            temp = sensor.temperature         
             humidity = sensor.humidity
             fieldnames = ["Date_Time", "Temp", "RH"]
             with open("/home/pi/Desktop/PY_scripts/Conviron/Log.csv", "a", newline="") as log:
@@ -169,7 +167,7 @@ def data_log():
         except Exception as error:
             sensor.exit()
             raise error
-     
+
 threading.Thread(target=Lighting_Timer).start()
 threading.Thread(target=Temp_Control).start()
 threading.Thread(target=data_log).start()
