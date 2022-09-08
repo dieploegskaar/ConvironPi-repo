@@ -30,24 +30,10 @@ GPIO.output(22,False)
 GPIO.output(23,False)
 GPIO.output(24,False)
 GPIO.output(25,False)
-GPIO.output(16,True)                       #Start blower fan when machine starts
+GPIO.output(16,True)                      #Start blower fan when machine starts
 GPIO.output(26,False)
 
 time.sleep(10)
-
-while True:
-    try:
-        global temp
-        global humidity
-        temp = sensor.temperature         
-        humidity = sensor.humidity
-    except RuntimeError as error:
-        print("\n"+error.args[0])
-        time.sleep(2.0)
-        continue
-    except Exception as error:
-        sensor.exit()
-        raise error
 
 def Lighting_Timer():
     while True:
@@ -56,26 +42,26 @@ def Lighting_Timer():
             onTime = now.replace(hour = 6, minute = 0, second  = 0, microsecond = 0)    # set hours to start turning on leds
             offTime = now.replace(hour = 18, minute = 0, second  = 0, microsecond = 0)  # set time to start turnomg leds off
             LEDsOn = now > onTime and now < offTime
-            LEDsOff = now > offTime or now < onTime
+            LEDsOff = now > offTime
             if(LEDsOn == True):
                 GPIO.output(27,True)
-                time.sleep(1200)          #wait 5 minutes before turning on next LED bank(cascaded to simulate sunrise/sunset)
+                time.sleep(300)            #wait 5 minutes before turning on next LED bank(cascaded to simulate sunrise/sunset)
                 GPIO.output(22,True)
-                time.sleep(1200)
+                time.sleep(300)                 
                 GPIO.output(23,True)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(24,True)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(25,True)
             if(LEDsOff == True):
                 GPIO.output(25,False)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(24,False)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(23,False)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(22,False)
-                time.sleep(1200)
+                time.sleep(300)
                 GPIO.output(27,False)        
         except RuntimeError as error:
             print("\n"+error.args[0])
@@ -86,77 +72,66 @@ def Lighting_Timer():
             raise error
         
 def out_put():
+    temp = sensor.temperature         
+    humidity = sensor.humidity
+    print("\nTempreature: {}*C \nHumidity: {}% ".format(temp, (humidity+7)))
+
+def Temp_Control():                         #Tempreature sensing and control
     while True:
-        try:
+        try:           
             now = datetime.datetime.now()
-            temp = sensor.temperature         
-            humidity = sensor.humidity           
-            print("\nE6, B17 EnviroPi climate data:", now.strftime("%c"))
-            print("\nTemp: {}*C \nRH: {}% ".format(temp, (humidity)))
-            time.sleep(10.0)
-        except RuntimeError as error:
-            print("\n"+error.args[0])
-            time.sleep(2.0)
-            continue
-        except Exception as error:
-            sensor.exit()
-            raise error
-        
-def Temp_Control(): #Tempreature sensing and control
-    while True:
-        try:
-            now = datetime.datetime.now()
-            temp = sensor.temperature         
-            humidity = sensor.humidity
-            isDay = now.replace(hour = 6, minute = 0, second  = 0, microsecond = 0)    #Day start
+            isDday = now.replace(hour = 6, minute = 0, second  = 0, microsecond = 0)    #Day start
             isNight = now.replace(hour = 18, minute = 0, second  = 0, microsecond = 0)  #Night starts
-            dayTemps = now > isDay and now < isNight
-            nighTemps = now > isNight or now < isDay                         
+            dayTemps = now > isDday and now < isNight
+            nighTemps = now > isNight        
+            temp = sensor.temperature         
+            humidity = sensor.humidity                     
             #Day Tempreatue scenario
             if(dayTemps == True):
-                print('Day Tempreatures scenario')
-                if temp > 25.0:
+                print("\nBuilding E6, room B11 climate data:", now.strftime("%c"))
+                print('Day Tempreatures scenario') 
+                if temp >= 26.0:
                     GPIO.output(26,False)   #Heating OFF
                     GPIO.output(17,True)    #cooling ON
+                    out_put()
                     print("Cooling ON")
-                    time.sleep(8.0)
-                    GPIO.output(17,False)
-                    time.sleep(30.0)
-                elif temp < 23.0:
+                    time.sleep(60.0)                    
+                elif temp <=24.0:
                     GPIO.output(17,False)   #Cooling OFF
                     GPIO.output(26,True)    #Heating ON
+                    out_put()
                     print("Heating ON")
-                    time.sleep(12.0)
-                    GPIO.output(26,False)
-                    time.sleep(25.0)
+                    time.sleep(20.0)                   
                 else:
                     GPIO.output(17,False)   #Cooling OFF
                     GPIO.output(26,False)   #Heating OFF
+                    out_put()
                     print("Cooling & Heating OFF")
                     time.sleep(5.0)                    
+                data_log()
             #Night Tempreature scenario
             if(nighTemps == True):
-                print("\nBuilding E6, room B17 EnviroPi climate data:",now.strftime("%c") )
+                print("\nBuilding E6, room B11 climate data:", now)
                 print('Night Tempreatures scenaio')
-                if temp > 8.0:
+                if temp >= 21.0:
                     GPIO.output(26,False)   #Heating OFF
                     GPIO.output(17,True)    #cooling ON
+                    out_put()
                     print("\nCooling ON")
-                    time.sleep(8.0)
-                    GPIO.output(17,False)
-                    time.sleep(25.0)
-                elif temp < 6.0:
+                    time.sleep(60)
+                elif temp <=16.0:
                     GPIO.output(17,False)   #cooling OFF
                     GPIO.output(26,True)    #Heating ON
+                    out_put()
                     print("\nHeating ON") 
-                    time.sleep(10.0)
-                    GPIO.output(26,False)
-                    time.sleep(30.0)
+                    time.sleep(20.0)
                 else:
                     GPIO.output(26,False)   #Heating OFF
                     GPIO.output(17,False)   #Cooling OFF
+                    out_put()
                     print("Cooling & Heating OFF")
-                    time.sleep(5.0)                                              
+                    time.sleep(5.0)
+                data_log()                                                  
         except RuntimeError as error:
             print("\n"+error.args[0])
             time.sleep(2.0)
@@ -166,25 +141,14 @@ def Temp_Control(): #Tempreature sensing and control
             raise error
         
 def data_log():
-    while True:
-        try:
-            now = datetime.datetime.now()
-            temp = sensor.temperature         
-            humidity = sensor.humidity
-            fieldnames = ["Date_Time", "Temp", "RH"]
-            with open("/home/pi/Desktop/PY_scripts/Conviron/Log.csv", "a", newline="") as log:
-                writer = csv.DictWriter(log, delimiter='-',fieldnames=fieldnames)
-                writer.writerow({"Date_Time" : now.strftime("%c ") , "Temp" : " {} *C ".format(temp) , "RH" : " {} % ".format(humidity)})    
-                time.sleep(60)
-        except RuntimeError as error:
-            print("\n"+error.args[0])
-            time.sleep(2.0)
-            continue
-        except Exception as error:
-            sensor.exit()
-            raise error
-     
+    now = datetime.datetime.now()
+    temp = sensor.temperature       
+    humidity = sensor.humidity
+    fieldnames = ["Date_Time", "Temp", "RH"]
+    with open("/home/pi/Desktop/PY_scripts/Conviron/Log.csv", "a", newline="") as log:
+        writer = csv.DictWriter(log, delimiter='-',fieldnames=fieldnames)
+        writer.writerow({"Date_Time" : now.strftime("%c ") , "Temp" : " {}*C ".format(temp) , "RH" : " {}% ".format(humidity)})    
+         
 threading.Thread(target=Lighting_Timer).start()
 threading.Thread(target=Temp_Control).start()
 threading.Thread(target=data_log).start()
-threading.Thread(target=out_put).start()
