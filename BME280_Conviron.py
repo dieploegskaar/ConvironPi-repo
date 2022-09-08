@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 #Author Petrus Bronkhorst 2022
-from cProfile import label
-from ssl import HAS_SSLv3
 import threading
 import time
 import datetime
-from unittest.util import three_way_cmp
 import RPi.GPIO as GPIO
 import psutil
 import csv
